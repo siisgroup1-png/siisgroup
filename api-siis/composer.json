@@ -1,0 +1,6 @@
+{
+    "name": "ss/api-siis",
+    "require": {
+        "firebase/php-jwt": "^7.1"
+    }
+}
