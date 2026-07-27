@@ -13,7 +13,7 @@
 </div>
 
 <div id="galerie" class="tab-content active">
-    <button class="btn-gallery btn btn-light mb-2">Add Picture</button>
+    <button class="btn-gallery btn btn-light mb-2">Add picture</button>
     <div class="row"> 
       <div class="card shadow mb-4 col-lg-12">
         <div class="card-header py-3">

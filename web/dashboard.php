@@ -86,11 +86,11 @@
         </div>
 
         <section class="menu" id="menu">
-
+<!-- 
             <div class="module" onclick="ouvrirModule('Setting','./modules/setting.php')">
                 <i class="fa-solid fa-gear"></i>
                 <p>Setting</p>
-            </div>
+            </div> -->
 
             <div class="module" onclick="ouvrirModule('Branch','./modules/branch.php')">
                 <i class="fa-solid fa-building-user"></i>
@@ -133,10 +133,6 @@
                 <p>CO-drive</p>
             </div>
 
-<!--             <div class="module" onclick="ouvrirModule('Recrutement','./modules/recrutement.php')">
-                <i class="fa-solid fa-briefcase"></i>
-                <p>Recrutement</p>
-            </div> -->
 
         </section>
 
@@ -222,21 +218,29 @@
             function charger(page){
 
                 fetch(page)
-                .then(r=>r.text())
-                .then(html=>{
+                    .then(r => r.text())
+                    .then(html => {
 
-                    contenu.innerHTML=html;
+                        contenu.innerHTML = html;
 
-                    if(page.includes("web_site.php")){
+                        if(page.includes("web_site.php")){
 
-                        let script=document.createElement("script");
-                        script.src="./assets/js/web_site.js";
+                            const ancienScript = document.getElementById("webSiteScript");
 
-                        contenu.appendChild(script);
+                            if(ancienScript){
+                                ancienScript.remove();
+                            }
 
-                    }
+                            const script = document.createElement("script");
 
-                });
+                            script.id = "webSiteScript";
+                            script.src = "./assets/js/web_site.js";
+
+                            contenu.appendChild(script);
+
+                        }
+
+                    });
 
             }
 

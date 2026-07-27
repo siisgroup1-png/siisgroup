@@ -1,3 +1,4 @@
+(() => {
 document.querySelectorAll(".tab-button").forEach(bouton => {
 
     bouton.addEventListener("click", function(){
@@ -425,3 +426,5 @@ imgInp2.onchange = evt => {
         picture2.src = URL.createObjectURL(file);
     }
 };
+
+})();
