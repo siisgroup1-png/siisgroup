@@ -1203,3 +1203,23 @@ hr{
 .section-title .img-fluid{
    height: 150px;
 }
+
+.formationSwiper {
+  width: 100%;
+  padding: 30px 0 50px;
+}
+
+.formationSwiper .swiper-slide {
+  height: 420px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.formationSwiper .swiper-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}

@@ -70,15 +70,18 @@
   <!-- Images -->
   <div class="row portfolio-container">
     <?php
-    foreach ($gallery as $e) {
-      $image = json_decode($e['picture'], true);
-      $imgUrl = $image[0] ?? '';
-      echo '<div class="col-lg-4 mt-4 portfolio-item" data-aos="fade-up">';
-      echo '  <img src="' . htmlspecialchars($imgUrl) . '" class="img-fluid" alt="">';
-      echo '<h4 class="title mt-2">' . strip_tags($e['description']) . '</h4>';
-      echo '</div>';
-    }
-    ?>
+foreach ($gallery as $e) {
+
+    $image = json_decode($e['picture'], true);
+    $imgUrl = $image[0] ?? '';
+    echo '<div class="col-lg-4 mt-4 portfolio-item" data-aos="fade-up">';
+    echo '<a href="' . htmlspecialchars($imgUrl) . '" class="venobox gallery-image" data-gall="gallery-siis" title="' . htmlspecialchars(strip_tags($e['description'])) . '">';
+    echo '<img src="' . htmlspecialchars($imgUrl) . '" class="img-fluid" alt="' . htmlspecialchars(strip_tags($e['description'])) . '">';
+    echo '</a>';
+    echo '<h4 class="title mt-2">'. htmlspecialchars(strip_tags($e['description'])). '</h4>';
+    echo '</div>';
+}
+?>
 
   </div>
 </main>

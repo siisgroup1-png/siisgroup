@@ -347,22 +347,48 @@ $(document).on('click', '.icofont-close', function() {
 
 
 $(".owl-carousel").owlCarousel({
-    autoplay: true,
-    margin: 25,
-    dots: true,
-    loop: true,
-    responsive: {
-      0: {
-        items: 1
-      },
-      768: {
-        items: 2
-      },
-      900: {
-        items: 3
-      }
+  autoplay: true,
+  margin: 25,
+  dots: true,
+  loop: true,
+  responsive: {
+    0: {
+      items: 1
+    },
+    768: {
+      items: 2
+    },
+    900: {
+      items: 3
     }
-  });
+  }
+});
+
+var swiper = new Swiper(".formationSwiper", {
+  loop: true,
+  autoplay: {
+    delay: 3000,
+    disableOnInteraction: false,
+  },
+  slidesPerView: 1,
+  spaceBetween: 20,
+  pagination: {
+    el: ".swiper-pagination",
+    clickable: true,
+  },
+  navigation: {
+    nextEl: ".swiper-button-next",
+    prevEl: ".swiper-button-prev",
+  },
+  breakpoints: {
+    768: {
+      slidesPerView: 2
+    },
+    1200: {
+      slidesPerView: 3
+    }
+  }
+});
 
 
 

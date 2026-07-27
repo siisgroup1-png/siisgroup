@@ -1,11 +1,7 @@
 <?php
-  require_once './../api-siis/models/Achievement.php';
-  if (!isset($_GET['id'])) {
-    die("Achievement non trouvé");
-  }
-  $id = (int) $_GET['id'];
-  $AchievementModel = new Achievement();
-  $achievement = $AchievementModel->getById($id);
+  require_once './../api-siis/models/Gallery.php';
+  $galleryModel = new Gallery();
+  $gallery = $galleryModel->getAllGallery();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,7 +57,7 @@
         <div class="breadcrumbs">
           <a href="./../index.php">Index</a>
           <span>/</span>
-          <span>Achievement</span>
+          <span>Formation</span>
         </div>
       </nav>
 
@@ -73,21 +69,86 @@
 
   <!-- Images -->
   <div class="row portfolio-container">
-   <?php
-    if ($achievement) {
+   <div class="about-content">
+      <h2 class="inner-title">
+        Nos formations
+      </h2>
+      <div class="title-line"></div>
+      <div class="our-story text-justify">
+        
+          <p>FORMEZ-VOUS AUJOURD’HUI POUR CONSTRUIRE VOTRE AVENIR !</p>
+          Vous souhaitez acquérir des compétences pratiques et apprendre un métier d’avenir ? <b>SIIS GROUP</b> vous ouvre ses portes !<br>
+          Que vous soyez débutant ou que vous souhaitiez perfectionner vos compétences, nos formations sont accessibles et orientées vers la pratique.<br>
+        </p>
+      </div>
+      <!-- <a href="#" class="btn-about">
+        En savoir plus
+      </a> -->
+    </div>
+    <div class="swiper formationSwiper">
+  <div class="swiper-wrapper">
 
-        $image = json_decode($achievement['picture'] ?? '[]', true);
-        $imgUrl = $image[0] ?? '';
-        $description = htmlspecialchars($achievement['description'] ?? '');
-        echo '<div class="col-lg-4 mt-4 portfolio-item" data-aos="fade-up">';
-        echo '<a href="' . htmlspecialchars($imgUrl) . '" class="venobox gallery-image" data-gall="achievement-gallery" title="' . $description . '">';
-        echo '<img src="' . htmlspecialchars($imgUrl) . '" class="img-fluid" alt="' . $description . '">';
-        echo '</a>';
-        echo '<h4 class="title mt-2">' . $description . '</h4>';
-        echo '</div>';
+    <div class="swiper-slide">
+      <a href="./assets/img/formations/infographie.png"
+         class="venobox"
+         data-gall="formations">
+        <img src="./assets/img/formations/infographie.png"
+             alt="Formation en Infographie">
+      </a>
+    </div>
 
-    } 
-?>
+    <div class="swiper-slide">
+      <a href="./assets/img/formations/developpement-web.png"
+         class="venobox"
+         data-gall="formations">
+        <img src="./assets/img/formations/developpement-web.png"
+             alt="Formation en Développement Web">
+      </a>
+    </div>
+
+    <div class="swiper-slide">
+      <a href="./assets/img/formations/secretariat.png"
+         class="venobox"
+         data-gall="formations">
+        <img src="./assets/img/formations/secretariat.png"
+             alt="Formation en Secrétariat de Direction">
+      </a>
+    </div>
+
+    <div class="swiper-slide">
+      <a href="./assets/img/formations/photovoltaique.png"
+         class="venobox"
+         data-gall="formations">
+        <img src="./assets/img/formations/photovoltaique.png"
+             alt="Formation en Montage des Systèmes Photovoltaïques">
+      </a>
+    </div>
+
+    <div class="swiper-slide">
+      <a href="./assets/img/formations/ia.png"
+         class="venobox"
+         data-gall="formations">
+        <img src="./assets/img/formations/ia.png"
+             alt="Formation en Intelligence Artificielle">
+      </a>
+    </div>
+
+    <div class="swiper-slide">
+      <a href="./assets/img/formations/cybersecurite.png"
+         class="venobox"
+         data-gall="formations">
+        <img src="./assets/img/formations/cybersecurite.png"
+             alt="Formation en Cybersécurité">
+      </a>
+    </div>
+
+  </div>
+
+  <div class="swiper-pagination"></div>
+
+  <div class="swiper-button-next"></div>
+  <div class="swiper-button-prev"></div>
+</div>
 
   </div>
 </main>

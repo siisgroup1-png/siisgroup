@@ -74,12 +74,12 @@
           </li>
 
           <li>
-            <a href="./web/galerie.php">Galerie</a>
+            <a href="./web/formation.php">Formation</a>
           </li>
 
-          <!-- <li>
-            <a href="./web/recrutement.php">Recrutement</a>
-          </li> -->
+          <li>
+            <a href="./web/galerie.php">Galerie</a>
+          </li>
 
           <li>
             <a href="#contact">Contact</a>
@@ -416,8 +416,8 @@
                         <div>
                             <h4>Email</h4>
                             <p>
-                                <a href="mailto:contact@siis.com">
-                                  contact@siis.com
+                                <a href="mailto:contacts@siis-group.com">
+                                  contacts@siis-group.com
                                 </a>
                             </p>
                         </div>
@@ -439,13 +439,13 @@
 
                     <div class="contact-item">
                         <div class="contact-icon">
-                            <i class="bi bi-linkedin"></i>
+                            <i class="bi bi-tiktok"></i>
                         </div>
                         <div>
-                            <h4>LinkedIn</h4>
+                            <h4>Tiktok</h4>
                             <p>
-                                <a href="#" target="_blank">
-                                    SIIS
+                                <a href="https://www.tiktok.com/@siisgroup?_r=1&_t=ZS-98NVTH3Hjs4" target="_blank">
+                                    siis group officiel
                                 </a>
                             </p>
                         </div>
