@@ -112,7 +112,7 @@
             </center>
 
             <div class="input-box">
-              <input type="text" name="libel" required placeholder="Libel">
+              <input type="text" name="libel" required placeholder="Libel" class="input">
             </div>
 
             <div class="input-box">

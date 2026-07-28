@@ -5,14 +5,12 @@ require_once __DIR__ . '/../core/Middleware.php';
 class AgencyController {
 
     private $model;
-    private $agency; // utilisateur connecté
+
 
 
     public function __construct() {
-        // 🔐 Vérifie le token
-        $this->agency = Middleware::checkAuth();
-
         $this->model = new Agency();
+        error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
     }
 
     // =========================
@@ -21,7 +19,7 @@ class AgencyController {
 
      public function index() {
         header('Content-Type: application/json; charset=utf-8');
-        $data = $this->agency->getAllAgency();
+        $data = $this->model->getAllAgency();
         echo json_encode(['success'=>true, 'data'=>$data]);
         
         exit;
@@ -31,7 +29,7 @@ class AgencyController {
     // =========================
     public function show($id) {
         header('Content-Type: application/json; charset=utf-8');
-        $data = $this->agency->getById($id);
+        $data = $this->model->getById($id);
         if ($data) {
             echo json_encode(['success'=>true, 'data'=>$data]);
         } else {
@@ -46,8 +44,8 @@ class AgencyController {
     public function store($data) {
         header('Content-Type: application/json; charset=utf-8');
 
-        $id = $this->agency->create($data);
-        $data = $this->agency->getById($id);
+        $id = $this->model->create($data);
+        $data = $this->model->getById($id);
         echo json_encode(['success'=>true, 'data'=>$data]);
         exit;
     }

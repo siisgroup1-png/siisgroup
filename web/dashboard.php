@@ -92,9 +92,9 @@
                 <p>Setting</p>
             </div> -->
 
-            <div class="module" onclick="ouvrirModule('Branch','./modules/branch.php')">
+            <div class="module" onclick="ouvrirModule('Agency','./modules/agency.php')">
                 <i class="fa-solid fa-building-user"></i>
-                <p>Branch</p>
+                <p>Agency</p>
             </div>
 
             <div class="module" onclick="ouvrirModule('staff','./modules/staff.php')">
@@ -223,23 +223,42 @@
 
                         contenu.innerHTML = html;
 
+                        // Supprimer l'ancien script du module
+                        const ancienScript = document.getElementById("moduleScript");
+
+                        if(ancienScript){
+                            ancienScript.remove();
+                        }
+
+                        let scriptSrc = null;
+
+                        // Associer chaque page à son JavaScript
                         if(page.includes("web_site.php")){
+                            scriptSrc = "./assets/js/web_site.js";
+                        }
 
-                            const ancienScript = document.getElementById("webSiteScript");
+                        if(page.includes("messaging.php")){
+                            scriptSrc = "./assets/js/messaging.js";
+                        }
 
-                            if(ancienScript){
-                                ancienScript.remove();
-                            }
+                        if(page.includes("agency.php")){
+                            scriptSrc = "./assets/js/agency.js";
+                        }
+
+                        // Charger le JavaScript correspondant
+                        if(scriptSrc){
 
                             const script = document.createElement("script");
 
-                            script.id = "webSiteScript";
-                            script.src = "./assets/js/web_site.js";
+                            script.id = "moduleScript";
+                            script.src = scriptSrc;
 
                             contenu.appendChild(script);
-
                         }
 
+                    })
+                    .catch(err => {
+                        console.error("Erreur lors du chargement du module :", err);
                     });
 
             }

@@ -29,12 +29,12 @@
                 <div class="input-box">
                     <i class="fa-solid fa-user"></i>
                     <input type="text" name="login" required placeholder="User name"
-                    >
+                    class="login">
                 </div>
 
                 <div class="input-box">
                     <i class="fa-solid fa-lock"></i>
-                    <input type="password" name="password" required placeholder="Password" id="password">
+                    <input type="password" name="password" required placeholder="Password" id="password" class="password">
                     <i class="fa-solid fa-eye eye" id="togglePassword"></i>
                 </div>
 

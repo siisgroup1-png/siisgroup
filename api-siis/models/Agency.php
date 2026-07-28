@@ -86,12 +86,12 @@ class Agency extends BaseModel {
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com'; 
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'etablissementsiis.1@gmail.com';
+            $mail->Username   = 'siisgroup1@gmail.com';
             $mail->Password   = 'vvzm ioaa gckv vcze '; 
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
 
-            $mail->setFrom('etablissementsiis.1@gmail.com', 'SIIS');
+            $mail->setFrom('siisgroup1@gmail.com', 'SIIS');
             $mail->addAddress($data['email'], $data['login']);
 
             $mail->isHTML(true);
