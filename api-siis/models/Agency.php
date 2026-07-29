@@ -64,7 +64,7 @@ class Agency extends BaseModel {
                 "phone",
                 "email",
                 "password",
-                "create_at",
+                "created_at",
             ],
             [
                 $data['login'],

@@ -157,12 +157,13 @@ class Database {
                         FOREIGN KEY (id_salary_section) REFERENCES salary_section(id_salary_section)
                         ON DELETE CASCADE ON UPDATE CASCADE
                     )",
-                "conversation" => "
-                    CREATE TABLE IF NOT EXISTS conversation (
-                        id_conversation INT AUTO_INCREMENT PRIMARY KEY,
+                "messaging" => "
+                    CREATE TABLE IF NOT EXISTS messaging (
+                        id_messaging INT AUTO_INCREMENT PRIMARY KEY,
                         subject VARCHAR(50) NOT NULL,
                         id_sender INT,
-                        massage TEXT,
+                        message TEXT,
+                        files TEXT,
                         id_agency INT, /*receipt*/
                         created_at DATETIME,
                         FOREIGN KEY (id_agency) REFERENCES agency(id_agency)
