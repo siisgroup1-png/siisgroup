@@ -1,430 +1,1247 @@
 (() => {
-document.querySelectorAll(".tab-button").forEach(bouton => {
 
-    bouton.addEventListener("click", function(){
+    // =========================================================
+    // VARIABLES
+    // =========================================================
 
-        document.querySelectorAll(".tab-button")
-        .forEach(btn => btn.classList.remove("active"));
+    const token = localStorage.getItem('token');
 
-        document.querySelectorAll(".tab-content")
-        .forEach(tab => tab.classList.remove("active"));
+    let agencies = [];
+    let selectedAgency = null;
+    let currentAgencyId = null;
 
-        this.classList.add("active");
 
-        let id=this.dataset.tab;
+    // =========================================================
+    // RÉCUPÉRER L'ID DE L'AGENCE CONNECTÉE
+    // =========================================================
 
-        document.getElementById(id).classList.add("active");
+    function getCurrentAgencyId() {
 
-    });
+        // -----------------------------------------------------
+        // 1. localStorage
+        // -----------------------------------------------------
 
-});
+        const storedId =
+            localStorage.getItem('id_agency') ||
+            localStorage.getItem('agency_id');
 
-let editingRow;
+        if (storedId) {
 
-let galleries = $('.info-gallery').DataTable({
-    pageLength: 5,
-    language: {
-        paginate: {
-            previous: "<i class='fas fa-angle-left'></i>",
-            next: "<i class='fas fa-angle-right'></i>"
-        }
-    }
-});
+            const id = Number(storedId);
 
-let achievements = $('.info-achievement').DataTable({
-    pageLength: 5,
-    language: {
-        paginate: {
-            previous: "<i class='fas fa-angle-left'></i>",
-            next: "<i class='fas fa-angle-right'></i>"
-        }
-    }
-});
-
-async function loadGallery() {
-
-    try {
-
-        const response = await fetch('/api-siis/routes/gallery.php', {
-            method: 'GET'
-        });
-
-        const responses = await fetch('/api-siis/routes/achievement.php', {
-            method: 'GET'
-        });
-
-        const galleryRes = await response.json();
-
-        const achievementRes = await responses.json();
-
-        if (galleryRes.success && Array.isArray(galleryRes.data)) {
-
-            galleries.clear();
-
-            galleryRes.data.forEach(gallery => {
-
-                const picture = gallery.picture
-                    ? `<img src="${gallery.picture}" width="50" height="50" style="object-fit:cover;border-radius:5px;">`
-                    : 'No picture';
-
-                galleries.row.add([
-                    picture,
-                    gallery.description,
-                    `
-                    <button class="icon-btn btn btn-primary edit-item" data-id="${gallery.id_gallery}">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-
-                    <button class="icon-btn btn btn-danger danger delete-item" data-id="${gallery.id_gallery}">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                    `,
-                    gallery.id_gallery
-                ]);
-
-            });
-
-            galleries.draw(false);
-
-        } else {
-            console.error(galleryRes);
+            if (!isNaN(id)) {
+                return id;
+            }
         }
 
-        if (achievementRes.success && Array.isArray(achievementRes.data)) {
 
-            achievements.clear();
+        // -----------------------------------------------------
+        // 2. JWT
+        // -----------------------------------------------------
 
-            achievementRes.data.forEach(achievement => {
+        if (token) {
 
-                const picture = achievement.picture
-                    ? `<img src="${achievement.picture}" width="50" height="50" style="object-fit:cover;border-radius:5px;">`
-                    : 'No picture';
+            try {
 
-                achievements.row.add([
-                    picture,
-                    achievement.libel,
-                    achievement.description,
-                    `
-                    <button class="icon-btn btn btn-primary edit-items" data-id="${achievement.id_achievement}">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
+                const parts = token.split('.');
 
-                    <button class="icon-btn btn btn-danger danger delete-items" data-id="${achievement.id_achievement}">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                    `,
-                    achievement.id_achievement
-                ]);
+                if (parts.length === 3) {
 
-            });
+                    const payload =
+                        JSON.parse(
+                            atob(
+                                parts[1]
+                                    .replace(/-/g, '+')
+                                    .replace(/_/g, '/')
+                            )
+                        );
 
-            achievements.draw(false);
+                    const id =
+                        payload.id_agency ??
+                        payload.agency_id ??
+                        payload.id;
 
-        } else {
-            console.error(achievementRes);
+                    if (id !== undefined) {
+
+                        const agencyId =
+                            Number(id);
+
+                        if (!isNaN(agencyId)) {
+                            return agencyId;
+                        }
+                    }
+                }
+
+            } catch (error) {
+
+                console.error(
+                    'Impossible de lire le token :',
+                    error
+                );
+
+            }
         }
 
-    } catch (err) {
-        console.error(err);
+        return null;
     }
 
-}
 
-// Chargement des données au démarrage
-loadGallery();
+    currentAgencyId =
+        getCurrentAgencyId();
 
-$('.btn-gallery').on('click', function () {
-    $('.modal-gallery .modal-title').text("Add picture");
-    $('.modal-gallery button[type=submit]').text("Add");
-    $('.modal-gallery').modal({
-        backdrop: 'static',
-        keyboard: false
-    });
-});
 
-$('.btn-achievement').on('click', function () {
-    $('.modal-achievement .modal-title').text("Add achievement");
-    $('.modal-achievement button[type=submit]').text("Add");
-    $('.modal-achievement').modal({
-        backdrop: 'static',
-        keyboard: false
-    });
-});
+    console.log(
+        'Agence connectée :',
+        currentAgencyId
+    );
 
-$('.close').click(function(){
-    $('#picture, #picture2').attr('src','');
-})
 
-$('#gallery').on('submit', async function (e) {
+    // =========================================================
+    // CHARGER LES AGENCES
+    // =========================================================
 
-    e.preventDefault();
+    async function loadAgency() {
 
-    const form = this;
-    const formData = new FormData(form);
-    const isEdit = !!formData.get('id');
+        try {
 
-    const submitBtn = $(form).find('button[type="submit"]');
+            const response =
+                await fetch(
+                    '/api-siis/routes/agency.php',
+                    {
+                        method: 'GET',
 
-    submitBtn.addClass('show-loader').prop('disabled', true);
+                        headers: token
+                            ? {
+                                'Authorization':
+                                    'Bearer ' + token
+                            }
+                            : {}
+                    }
+                );
 
-    try {
 
-        const response = await fetch('/api-siis/routes/gallery.php', {
-            method: 'POST',
-            body: formData
-        });
+            if (!response.ok) {
 
-        const result = await response.json();
+                throw new Error(
+                    `Erreur HTTP : ${response.status}`
+                );
 
-        submitBtn.removeClass('show-loader')
-                 .prop('disabled', false)
-                 .text(isEdit ? 'Update' : 'Add');
-
-        if (result.success) {
-
-            $('.modal-gallery').modal('hide');
-            form.reset();
-            $('#picture').attr('src','');
-
-            const picture = result.data.picture
-                ? `<img src="${result.data.picture}" width="50" height="50" style="object-fit:cover;border-radius:5px;">`
-                : 'No picture';
-
-            const rowData = [
-                picture,
-                result.data.description,
-                `
-                <button class="icon-btn btn btn-primary edit-item" data-id="${result.data.id_gallery}">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                </button>
-
-                <button class="icon-btn btn btn-danger danger delete-item" data-id="${result.data.id_gallery}">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-                `,
-                result.data.id_gallery
-            ];
-
-            if (isEdit && editingRow) {
-                editingRow.data(rowData).draw(false);
-                editingRow = null;
-            } else {
-                galleries.row.add(rowData).draw(false);
             }
 
-        } else {
-            alert(result.message);
+
+            const agencyRes =
+                await response.json();
+
+
+            console.log(
+                'Agences reçues :',
+                agencyRes
+            );
+
+
+            if (
+                !agencyRes.success ||
+                !Array.isArray(agencyRes.data)
+            ) {
+
+                console.error(
+                    'Réponse agence incorrecte :',
+                    agencyRes
+                );
+
+                return;
+            }
+
+
+            agencies =
+                agencyRes.data;
+
+
+            // =====================================================
+            // CONTENEUR DES ONGLETS
+            // =====================================================
+
+            const tabsContainer =
+                document.getElementById(
+                    'agencyTabs'
+                );
+
+
+            if (!tabsContainer) {
+
+                console.error(
+                    '#agencyTabs introuvable'
+                );
+
+                return;
+            }
+
+
+            tabsContainer.innerHTML = '';
+
+
+            // =====================================================
+            // CRÉER LES ONGLETS
+            // =====================================================
+
+            agencies.forEach(
+                (agency) => {
+
+                    // Ne pas afficher l'agence connectée
+                    if (
+                        currentAgencyId &&
+                        Number(agency.id_agency) ===
+                        Number(currentAgencyId)
+                    ) {
+                        return;
+                    }
+
+
+                    const button =
+                        document.createElement(
+                            'button'
+                        );
+
+
+                    button.type =
+                        'button';
+
+
+                    button.classList.add(
+                        'tab-button'
+                    );
+
+
+                    button.dataset.tab =
+                        agency.id_agency;
+
+
+                    button.textContent =
+                        agency.login;
+
+
+                    tabsContainer.appendChild(
+                        button
+                    );
+
+                }
+            );
+
+
+            // =====================================================
+            // SÉLECTIONNER LA PREMIÈRE AGENCE
+            // =====================================================
+
+            const firstAgency =
+                agencies.find(
+                    agency =>
+                        !currentAgencyId ||
+                        Number(agency.id_agency) !==
+                        Number(currentAgencyId)
+                );
+
+
+            if (firstAgency) {
+
+                const firstButton =
+                    tabsContainer.querySelector(
+                        `[data-tab="${firstAgency.id_agency}"]`
+                    );
+
+
+                if (firstButton) {
+
+                    firstButton.classList.add(
+                        'active'
+                    );
+
+                }
+
+
+                selectAgency(
+                    firstAgency
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                'Erreur lors du chargement des agences :',
+                error
+            );
+
         }
+    }
 
-    } catch (err) {
 
-        submitBtn.removeClass('show-loader')
-                 .prop('disabled', false)
-                 .text(isEdit ? 'Update' : 'Add');
+    // =========================================================
+    // CLIC SUR UNE AGENCE
+    // =========================================================
 
-        console.error(err);
-        alert(err.message);
+    document.addEventListener(
+        'click',
+        function (event) {
+
+            const button =
+                event.target.closest(
+                    '.tab-button'
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            // -------------------------------------------------
+            // Retirer active
+            // -------------------------------------------------
+
+            document
+                .querySelectorAll(
+                    '#agencyTabs .tab-button'
+                )
+                .forEach(
+                    btn => {
+
+                        btn.classList.remove(
+                            'active'
+                        );
+
+                    }
+                );
+
+
+            // -------------------------------------------------
+            // Ajouter active
+            // -------------------------------------------------
+
+            button.classList.add(
+                'active'
+            );
+
+
+            // -------------------------------------------------
+            // ID agence destinataire
+            // -------------------------------------------------
+
+            const idAgency =
+                button.dataset.tab;
+
+
+            const agency =
+                agencies.find(
+                    item =>
+                        String(item.id_agency) ===
+                        String(idAgency)
+                );
+
+
+            if (!agency) {
+
+                console.error(
+                    'Agence introuvable :',
+                    idAgency
+                );
+
+                return;
+            }
+
+
+            selectAgency(
+                agency
+            );
+
+        }
+    );
+
+
+    // =========================================================
+    // SÉLECTIONNER UNE AGENCE
+    // =========================================================
+
+    function selectAgency(agency) {
+
+        selectedAgency =
+            agency;
+
+
+        console.log(
+            'Agence destinataire :',
+            selectedAgency
+        );
+
+
+        displayAgency(
+            agency
+        );
+
+
+        loadMessages(
+            agency.id_agency
+        );
 
     }
 
-});
+
+    // =========================================================
+    // AFFICHER LES INFORMATIONS DE L'AGENCE
+    // =========================================================
+
+    function displayAgency(agency) {
+
+        const title =
+            document.getElementById(
+                'agencyTitle'
+            );
 
 
-$(document).on('click', '.edit-item', async function() {
-    const pictureId = $(this).data('id');
-    editingRow = galleries.row($(this).closest('tr'));
-    try {
-        const response = await fetch(`/api-siis/routes/gallery.php?id=${pictureId}`);
-        const result = await response.json();
-        if(result.success) {
-            const e = result.data;
-            $('#gallery input[name="id"]').val(pictureId);
-            const picture = Array.isArray(e.picture) ? e.picture: JSON.parse(e.picture || '[]');
-            $('#picture').attr('src', picture[0] || '');
-            $('#gallery textarea[name="description"]').val(e.description);
-            $('.modal-gallery .modal-title').text("Update Item");
-            $('.modal-gallery button[type=submit]').text("Update");
+        const info =
+            document.getElementById(
+                'agencyInfo'
+            );
 
-            $('.modal-gallery').modal({backdrop:'static', keyboard:false});
 
-        } else {
-            alert(result.message);
+        if (title) {
+
+            title.textContent =
+                agency.login ?? '';
+
         }
 
-    } catch(err) {
-        console.error(err);
-        alert("Erreur serveur : " + err.message);
-    }
-});
 
-$(document).on('click', '.delete-item', async function () {
-    const id = $(this).data('id');
-    if (!confirm("Do you want to delete this item ?")) return;
-    try {
-        const response = await fetch(`/api-siis/routes/gallery.php?id=${id}`, {
-                method: 'DELETE',
+        if (info) {
+
+            info.innerHTML = `
+
+                <div class="agency-details">
+
+                    <span>
+                        🌍
+                        ${escapeHtml(
+                            agency.country ?? ''
+                        )}
+                    </span>
+
+                    <span>
+                        🏙️
+                        ${escapeHtml(
+                            agency.city ?? ''
+                        )}
+                    </span>
+
+                    <span>
+                        📍
+                        ${escapeHtml(
+                            agency.address ?? ''
+                        )}
+                    </span>
+
+                    <span>
+                        📞
+                        ${escapeHtml(
+                            agency.phone ?? ''
+                        )}
+                    </span>
+
+                    <span>
+                        ✉️
+                        ${escapeHtml(
+                            agency.email ?? ''
+                        )}
+                    </span>
+
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    // =========================================================
+    // CHARGER LA CONVERSATION
+    // =========================================================
+
+    async function loadMessages(idReceive) {
+
+        const messagesContainer =
+            document.getElementById(
+                'messages'
+            );
+
+
+        if (!messagesContainer) {
+
+            console.error(
+                '#messages introuvable'
+            );
+
+            return;
+        }
+
+
+        messagesContainer.innerHTML = `
+
+            <div class="loading-messages">
+                Chargement des messages...
+            </div>
+
+        `;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/api-siis/routes/messaging.php?id_agency=${encodeURIComponent(idReceive)}`,
+                    {
+                        method: 'GET',
+
+                        headers: token
+                            ? {
+                                'Authorization':
+                                    'Bearer ' + token
+                            }
+                            : {}
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Erreur HTTP : ${response.status}`
+                );
+
+            }
+
+
+            const result =
+                await response.json();
+
+
+            console.log(
+                'Conversation reçue :',
+                result
+            );
+
+
+            if (
+                !result.success ||
+                !Array.isArray(result.data)
+            ) {
+
+                messagesContainer.innerHTML = `
+
+                    <div class="no-messages">
+                        Aucun message trouvé.
+                    </div>
+
+                `;
+
+                return;
+            }
+
+
+            renderMessages(
+                result.data
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                'Erreur chargement conversation :',
+                error
+            );
+
+
+            messagesContainer.innerHTML = `
+
+                <div class="no-messages">
+                    Impossible de charger les messages.
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    // =========================================================
+    // AFFICHER LES MESSAGES
+    // =========================================================
+
+    function renderMessages(messages) {
+
+        const container =
+            document.getElementById(
+                'messages'
+            );
+
+
+        if (!container) {
+            return;
+        }
+
+
+        container.innerHTML = '';
+
+
+        if (messages.length === 0) {
+
+            container.innerHTML = `
+
+                <div class="no-messages">
+                    Aucun message pour cette agence.
+                </div>
+
+            `;
+
+            return;
+        }
+
+
+        messages.forEach(
+            message => {
+
+                const element =
+                    createMessageElement(
+                        message
+                    );
+
+
+                container.appendChild(
+                    element
+                );
+
             }
         );
-        const result = await response.json();
-        if (result.success) {
-            // Supprime uniquement la ligne concernée dans le DataTable
-            galleries.rows().every(function () {
-                const row = this.node();
-                if ($(row).find('.delete-item').data('id') == id) {
-                    this.remove().draw(false);
-                }
-            });
-        } else {
-            alert(result.message || "Cannot delete");
-        }
-    } catch (err) {
-        console.error(err);
-        alert("Erreur serveur : " + err.message);
+
+
+        container.scrollTop =
+            container.scrollHeight;
+
     }
-});
 
-$('#achievementForm').on('submit', async function (e) {
 
-    e.preventDefault();
+    // =========================================================
+    // CRÉER UN ÉLÉMENT MESSAGE
+    // =========================================================
 
-    const form = this;
-    const formData = new FormData(form);
-    const isEdit = !!formData.get('id');
+    function createMessageElement(message) {
 
-    const submitBtn = $(form).find('button[type="submit"]');
+        const element =
+            document.createElement(
+                'div'
+            );
 
-    submitBtn.addClass('show-loader').prop('disabled', true);
 
-    try {
+        // =====================================================
+        // IMPORTANT
+        //
+        // id_sender = agence qui a envoyé
+        // currentAgencyId = agence connectée
+        //
+        // Même si selectedAgency est l'agence destinataire,
+        // elle ne doit PAS servir ici.
+        // =====================================================
 
-        const responses = await fetch('/api-siis/routes/achievement.php', {
-            method: 'POST',
-            body: formData
-        });
+        const isSent =
+            Number(message.id_sender) ===
+            Number(currentAgencyId);
 
-        const result = await responses.json();
 
-        submitBtn.removeClass('show-loader')
-                 .prop('disabled', false)
-                 .text(isEdit ? 'Update' : 'Add');
+        // =====================================================
+        // MESSAGE REÇU
+        // =====================================================
 
-        if (result.success) {
+        if (!isSent) {
 
-            $('.modal-achievement').modal('hide');
-            form.reset();
-            $('#picture2').attr('src','');
+            element.classList.add(
+                'message',
+                'received'
+            );
 
-            const picture = result.data.picture
-                ? `<img src="${result.data.picture}" width="50" height="50" style="object-fit:cover;border-radius:5px;">`
-                : 'No picture';
 
-            const rowData = [
-                picture,
-                result.data.libel,
-                result.data.description,
-                `
-                <button class="icon-btn btn btn-primary edit-items" data-id="${result.data.id_achievement}">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                </button>
+            element.innerHTML = `
 
-                <button class="icon-btn btn btn-danger danger delete-items" data-id="${result.data.id_achievement}">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-                `,
-                result.data.id_achievement
-            ];
+                <div class="message-avatar received-avatar">
+                    💬
+                </div>
 
-            if (isEdit && editingRow) {
-                editingRow.data(rowData).draw(false);
-                editingRow = null;
+                <div class="message-wrapper">
+
+                    <div class="message-meta">
+
+                        <strong>
+                            ${escapeHtml(
+                                message.sender_name ??
+                                'Agence'
+                            )}
+                        </strong>
+
+                        <span>
+                            ${formatTime(
+                                message.created_at
+                            )}
+                        </span>
+
+                    </div>
+
+                    <div class="message-bubble received-bubble">
+
+                        ${formatMessage(
+                            message.message
+                        )}
+
+                    </div>
+
+                    ${renderFile(
+                        message,
+                        'received'
+                    )}
+
+                </div>
+
+            `;
+
+        }
+
+
+        // =====================================================
+        // MESSAGE ENVOYÉ
+        // =====================================================
+
+        else {
+
+            element.classList.add(
+                'message',
+                'sent'
+            );
+
+
+            element.innerHTML = `
+
+                <div class="message-wrapper">
+
+                    <div class="message-meta sent-meta">
+
+                        <span>
+                            ${formatTime(
+                                message.created_at
+                            )}
+                        </span>
+
+                        <strong>
+                            Vous
+                        </strong>
+
+                    </div>
+
+                    <div class="message-bubble sent-bubble">
+
+                        ${formatMessage(
+                            message.message
+                        )}
+
+                    </div>
+
+                    ${renderFile(
+                        message,
+                        'sent'
+                    )}
+
+                    <div class="message-status">
+                        Envoyé ✓✓
+                    </div>
+
+                </div>
+
+                <div class="message-avatar sent-avatar">
+                    👤
+                </div>
+
+            `;
+
+        }
+
+
+        return element;
+
+    }
+
+
+    // =========================================================
+    // AFFICHER LE FICHIER
+    // =========================================================
+
+    function renderFile(message, type) {
+
+        // Ta BDD et ton modèle utilisent "file"
+        if (!message.file) {
+            return '';
+        }
+
+
+        let fileName =
+            message.file;
+
+
+        // Si PHP retourne un tableau
+        if (
+            typeof message.file ===
+            'object'
+        ) {
+
+            if (
+                Array.isArray(
+                    message.file
+                )
+            ) {
+
+                fileName =
+                    message.file[0] ?? '';
+
             } else {
-                achievements.row.add(rowData).draw(false);
+
+                fileName =
+                    message.file.name ??
+                    message.file.path ??
+                    '';
+
             }
 
-        } else {
-            alert(result.message);
         }
 
-    } catch (err) {
 
-        submitBtn.removeClass('show-loader')
-                 .prop('disabled', false)
-                 .text(isEdit ? 'Update' : 'Add');
+        if (!fileName) {
+            return '';
+        }
 
-        console.error(err);
-        alert(err.message);
+
+        return `
+
+            <div class="message-file ${type}-file">
+
+                📎
+
+                <div>
+
+                    <strong>
+                        ${escapeHtml(
+                            fileName
+                        )}
+                    </strong>
+
+                    <small>
+                        Fichier joint
+                    </small>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="download-file"
+                    data-file="${escapeHtml(
+                        fileName
+                    )}"
+                >
+                    ⬇
+                </button>
+
+            </div>
+
+        `;
 
     }
 
-});
 
+    // =========================================================
+    // FORMATER L'HEURE
+    // =========================================================
 
-$(document).on('click', '.edit-items', async function() {
-    const pictureId = $(this).data('id');
-    editingRow = achievements.row($(this).closest('tr'));
-    try {
-        const responses = await fetch(`/api-siis/routes/achievement.php?id=${pictureId}`);
-        const result = await responses.json();
-        if(result.success) {
-            const e = result.data;
-            $('#achievementForm input[name="id"]').val(pictureId);
-            const picture = Array.isArray(e.picture) ? e.picture: JSON.parse(e.picture || '[]');
-            $('#picture2').attr('src', picture[0] || '');
-            $('#achievementForm input[name="libel"]').val(e.libel);
-            $('#achievementForm textarea[name="description"]').val(e.description);
-            $('.modal-achievement .modal-title').text("Update Item");
-            $('.modal-achievement button[type=submit]').text("Update");
+    function formatTime(date) {
 
-            $('.modal-achievement').modal({backdrop:'static', keyboard:false});
-
-        } else {
-            alert(result.message);
+        if (!date) {
+            return '';
         }
 
-    } catch(err) {
-        console.error(err);
-        alert("Erreur serveur : " + err.message);
-    }
-});
 
-$(document).on('click', '.delete-items', async function () {
-    const id = $(this).data('id');
-    if (!confirm("Do you want to delete this item ?")) return;
-    try {
-        const responses = await fetch(`/api-siis/routes/achievement.php?id=${id}`, {
-                method: 'DELETE',
+        const d =
+            new Date(
+                String(date).replace(
+                    ' ',
+                    'T'
+                )
+            );
+
+
+        if (isNaN(d.getTime())) {
+            return '';
+        }
+
+
+        return d.toLocaleTimeString(
+            'fr-FR',
+            {
+                hour: '2-digit',
+                minute: '2-digit'
             }
         );
-        const result = await responses.json();
-        if (result.success) {
-            // Supprime uniquement la ligne concernée dans le DataTable
-            achievements.rows().every(function () {
-                const row = this.node();
-                if ($(row).find('.delete-items').data('id') == id) {
-                    this.remove().draw(false);
-                }
-            });
-        } else {
-            alert(result.message || "Cannot delete");
+
+    }
+
+
+    // =========================================================
+    // FORMATER LE MESSAGE
+    // =========================================================
+
+    function formatMessage(text) {
+
+        if (!text) {
+            return '';
         }
-    } catch (err) {
-        console.error(err);
-        alert("Erreur serveur : " + err.message);
-    }
-});
 
-imgInp.onchange = evt=>{
-  const [file] = imgInp.files
-  if (file) {
-    picture.src = URL.createObjectURL(file)
-  }
-}
 
-imgInp2.onchange = evt => {
-    const [file] = imgInp2.files;
-    if (file) {
-        picture2.src = URL.createObjectURL(file);
+        return escapeHtml(
+            text
+        ).replace(
+            /\n/g,
+            '<br>'
+        );
+
     }
-};
+
+
+    // =========================================================
+    // SÉCURISER HTML
+    // =========================================================
+
+    function escapeHtml(value) {
+
+        return String(value)
+
+            .replace(
+                /&/g,
+                '&amp;'
+            )
+
+            .replace(
+                /</g,
+                '&lt;'
+            )
+
+            .replace(
+                />/g,
+                '&gt;'
+            )
+
+            .replace(
+                /"/g,
+                '&quot;'
+            )
+
+            .replace(
+                /'/g,
+                '&#039;'
+            );
+
+    }
+
+
+    // =========================================================
+    // ENVOYER UN MESSAGE
+    // =========================================================
+
+    const messageForm =
+        document.getElementById(
+            'message'
+        );
+
+
+    if (messageForm) {
+
+        messageForm.addEventListener(
+            'submit',
+            async function (event) {
+
+                event.preventDefault();
+
+
+                // =================================================
+                // VÉRIFIER DESTINATAIRE
+                // =================================================
+
+                if (!selectedAgency) {
+
+                    alert(
+                        'Veuillez sélectionner une agence.'
+                    );
+
+                    return;
+                }
+
+
+                // =================================================
+                // VÉRIFIER AGENCE CONNECTÉE
+                // =================================================
+
+                if (!currentAgencyId) {
+
+                    alert(
+                        'Impossible de déterminer l’agence connectée.'
+                    );
+
+                    return;
+                }
+
+
+                // =================================================
+                // INPUT MESSAGE
+                // =================================================
+
+                const messageInput =
+                    document.getElementById(
+                        'messageInput'
+                    );
+
+
+                if (!messageInput) {
+
+                    console.error(
+                        '#messageInput introuvable'
+                    );
+
+                    return;
+                }
+
+
+                const message =
+                    messageInput.value.trim();
+
+
+                if (!message) {
+                    return;
+                }
+
+
+                // =================================================
+                // ID DESTINATAIRE
+                // =================================================
+
+                const id_receive =
+                    Number(
+                        selectedAgency.id_agency
+                    );
+
+
+                console.log(
+                    'Envoi :',
+                    {
+                        id_receive:
+                            id_receive,
+
+                        message:
+                            message
+                    }
+                );
+
+
+                // =================================================
+                // BOUTON ENVOYER
+                // =================================================
+
+                const submitButton =
+                    messageForm.querySelector(
+                        'button[type="submit"]'
+                    );
+
+
+                if (submitButton) {
+
+                    submitButton.disabled =
+                        true;
+
+                }
+
+
+                try {
+
+                    // =================================================
+                    // DONNÉES ENVOYÉES AU CONTRÔLEUR
+                    //
+                    // Le contrôleur récupère lui-même :
+                    //
+                    // $id_sender =
+                    //     $this->agency->id_agency;
+                    //
+                    // Donc on ne met PAS id_sender ici.
+                    // =================================================
+
+                    const data = {
+
+                        subject: '',
+
+                        message:
+                            message,
+
+                        id_receive:
+                            id_receive
+
+                    };
+
+
+                    // =================================================
+                    // POST
+                    // =================================================
+
+                    const response =
+                        await fetch(
+                            '/api-siis/routes/messaging.php',
+                            {
+                                method: 'POST',
+
+                                headers: {
+
+                                    'Content-Type':
+                                        'application/json',
+
+                                    'Authorization':
+                                        'Bearer ' + token
+
+                                },
+
+                                body:
+                                    JSON.stringify(
+                                        data
+                                    )
+
+                            }
+                        );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            `Erreur HTTP : ${response.status}`
+                        );
+
+                    }
+
+
+                    const result =
+                        await response.json();
+
+
+                    console.log(
+                        'Réponse POST :',
+                        result
+                    );
+
+
+                    // =================================================
+                    // ERREUR API
+                    // =================================================
+
+                    if (!result.success) {
+
+                        alert(
+                            result.message ||
+                            'Impossible d’envoyer le message.'
+                        );
+
+                        return;
+                    }
+
+
+                    // =================================================
+                    // VIDER LE TEXTAREA
+                    // =================================================
+
+                    messageInput.value = '';
+
+
+                    // =================================================
+                    // RECHARGER LA CONVERSATION
+                    // =================================================
+
+                    await loadMessages(
+                        selectedAgency.id_agency
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        'Erreur envoi message :',
+                        error
+                    );
+
+
+                    alert(
+                        'Impossible d’envoyer le message.'
+                    );
+
+                } finally {
+
+                    if (submitButton) {
+
+                        submitButton.disabled =
+                            false;
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
+    // =========================================================
+    // BOUTON FICHIER
+    // =========================================================
+
+    const fileButton =
+        document.getElementById(
+            'fileButton'
+        );
+
+
+    if (fileButton) {
+
+        fileButton.addEventListener(
+            'click',
+            function () {
+
+                const fileInput =
+                    document.getElementById(
+                        'fileInput'
+                    );
+
+
+                if (fileInput) {
+
+                    fileInput.click();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    // =========================================================
+    // DÉMARRAGE
+    // =========================================================
+
+    loadAgency();
 
 })();

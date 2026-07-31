@@ -1,40 +1,66 @@
 <?php
+
 require_once __DIR__ . '/BaseModel.php';
 
+class Messaging extends BaseModel
+{
 
-class Messaging extends BaseModel {
+    // =========================================================
+    // LECTURE : CONVERSATION ENTRE DEUX AGENCES
+    // =========================================================
 
-    /* =======================
-       LECTURE
-    ======================= */
-
-    public function getAllMessaging($id_agency) {
+    public function getAllMessaging($id_agency, $id_receive)
+    {
         $stmt = $this->personnalSelect(
             "messaging",
             "*",
-            "WHERE id_agency = ?",
-            [$id_agency]
+            "WHERE
+                (id_sender = ? AND id_receive = ?)
+                OR
+                (id_sender = ? AND id_receive = ?)
+             ORDER BY created_at ASC",
+            [
+                $id_agency,
+                $id_receive,
+
+                $id_receive,
+                $id_agency
+            ]
         );
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getByIdAndAgency($id,$id_agency) {
+
+    // =========================================================
+    // LECTURE : UN MESSAGE
+    // =========================================================
+
+    public function getByIdAndAgency($id, $id_agency)
+    {
         $stmt = $this->personnalSelect(
             "messaging",
             "*",
-            "WHERE id_messaging = ? And id_agency = ?",
-            [$id_messaging, $id_agency]
+            "WHERE id_messaging = ?
+             AND id_sender = ?",
+            [
+                $id,
+                $id_agency
+            ]
         );
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Un seul message
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /* =======================
-       CRUD
-    ======================= */
 
-    public function create($data, $id_agency) {
+    // =========================================================
+    // CREER / ENVOYER UN MESSAGE
+    // =========================================================
 
-        // Insertion en base
+    public function create($data, $id_agency)
+    {
+
         $this->insert(
             "messaging",
             [
@@ -42,46 +68,73 @@ class Messaging extends BaseModel {
                 "id_sender",
                 "message",
                 "file",
-                "id_agency",
-                "created_at",
+                "id_receive",
+                "created_at"
             ],
             [
-                $data['subject'],
-                $data['id_sender'],
-                $data['message'],
-                $data['file '],
+                $data['subject'] ?? null,
+
+                // Agence connectée
                 $id_agency,
-                date('Y-m-d'),
+
+                $data['message'] ?? null,
+
+                $data['file'] ?? null,
+
+                // Agence destinataire
+                $data['id_receive'],
+
+                date('Y-m-d H:i:s')
             ]
         );
 
         return $this->pdo->lastInsertId();
-
     }
 
-    public function update($id, $id_agency, $data) {
+
+    // =========================================================
+    // MODIFIER UN MESSAGE
+    // =========================================================
+
+    public function update($id, $id_agency, $data)
+    {
+
         return $this->set(
             "messaging",
-            ["subject", "message"],
             [
-                $data['subject'],
-                $data['message'],
+                "subject",
+                "message"
             ],
-            "WHERE id_messaging = ? And id_agency = ?",
-            [$id $id_agency]
+            [
+                $data['subject'] ?? null,
+                $data['message'] ?? null
+            ],
+            "WHERE id_messaging = ?
+             AND id_sender = ?",
+            [
+                $id,
+                $id_agency
+            ]
         );
     }
 
-    // =========================
-    // Supprimer  (sécurisé par établissement)
-    // =========================
-    public function delete($id, $id_agency){
+
+    // =========================================================
+    // SUPPRIMER UN MESSAGE
+    // =========================================================
+
+    public function delete($id, $id_agency)
+    {
+
         return $this->personalDelete(
             "messaging",
-            "WHERE id_messaging = ? AND id_agency = ?",
-            [$id, $id_agency]
+            "WHERE id_messaging = ?
+             AND id_sender = ?",
+            [
+                $id,
+                $id_agency
+            ]
         );
     }
-    
 
 }

@@ -163,10 +163,10 @@ class Database {
                         subject VARCHAR(50) NOT NULL,
                         id_sender INT,
                         message TEXT,
-                        files TEXT,
-                        id_agency INT, /*receipt*/
+                        file TEXT,
+                        id_receive INT,
                         created_at DATETIME,
-                        FOREIGN KEY (id_agency) REFERENCES agency(id_agency)
+                        FOREIGN KEY (id_receive) REFERENCES agency(id_agency)
                         ON DELETE CASCADE ON UPDATE CASCADE /* lorsque j'envoie je recupere l'id de l'entreprise qui envoie je le met dans sender et l'id de l'ntreprise qui recoit dans id agency*/
                     )",
                 "achievement" => "

@@ -215,53 +215,126 @@
 
             }
 
-            function charger(page){
+            function charger(page) {
 
-                fetch(page)
-                    .then(r => r.text())
-                    .then(html => {
+    // =========================================================
+    // 1. NETTOYER L'ANCIEN MODULE AVANT DE LE REMPLACER
+    // =========================================================
 
-                        contenu.innerHTML = html;
+    if (typeof window.destroyModule === 'function') {
 
-                        // Supprimer l'ancien script du module
-                        const ancienScript = document.getElementById("moduleScript");
+        console.log("Destruction de l'ancien module...");
 
-                        if(ancienScript){
-                            ancienScript.remove();
-                        }
+        window.destroyModule();
 
-                        let scriptSrc = null;
+        // Très important :
+        // supprimer la fonction pour éviter
+        // qu'elle soit réutilisée par erreur
+        window.destroyModule = null;
+    }
 
-                        // Associer chaque page à son JavaScript
-                        if(page.includes("web_site.php")){
-                            scriptSrc = "./assets/js/web_site.js";
-                        }
 
-                        if(page.includes("messaging.php")){
-                            scriptSrc = "./assets/js/messaging.js";
-                        }
+    // =========================================================
+    // 2. SUPPRIMER L'ANCIEN SCRIPT
+    // =========================================================
 
-                        if(page.includes("agency.php")){
-                            scriptSrc = "./assets/js/agency.js";
-                        }
+    const ancienScript =
+        document.getElementById("moduleScript");
 
-                        // Charger le JavaScript correspondant
-                        if(scriptSrc){
+    if (ancienScript) {
 
-                            const script = document.createElement("script");
+        ancienScript.remove();
 
-                            script.id = "moduleScript";
-                            script.src = scriptSrc;
+    }
 
-                            contenu.appendChild(script);
-                        }
 
-                    })
-                    .catch(err => {
-                        console.error("Erreur lors du chargement du module :", err);
-                    });
+    // =========================================================
+    // 3. CHARGER LE HTML
+    // =========================================================
+
+    fetch(page)
+
+        .then(response => {
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Erreur HTTP : ${response.status}`
+                );
 
             }
+
+            return response.text();
+
+        })
+
+        .then(html => {
+
+            contenu.innerHTML = html;
+
+
+            // =====================================================
+            // 4. DÉTERMINER LE JS DU MODULE
+            // =====================================================
+
+            let scriptSrc = null;
+
+
+            if (page.includes("web_site.php")) {
+
+                scriptSrc =
+                    "./assets/js/web_site.js";
+
+            }
+
+
+            if (page.includes("messaging.php")) {
+
+                scriptSrc =
+                    "./assets/js/messaging.js";
+
+            }
+
+
+            if (page.includes("agency.php")) {
+
+                scriptSrc =
+                    "./assets/js/agency.js";
+
+            }
+
+
+            // =====================================================
+            // 5. CHARGER LE NOUVEAU JS
+            // =====================================================
+
+            if (scriptSrc) {
+
+                const script =
+                    document.createElement("script");
+
+                script.id =
+                    "moduleScript";
+
+                script.src =
+                    scriptSrc;
+
+                contenu.appendChild(script);
+
+            }
+
+        })
+
+        .catch(error => {
+
+            console.error(
+                "Erreur lors du chargement du module :",
+                error
+            );
+
+        });
+
+}
 
             function fermer(tab){
 
