@@ -1,3 +1,4 @@
+
 (() => {
 
     // =========================================================
@@ -29,7 +30,7 @@
 
             const id = Number(storedId);
 
-            if (!isNaN(id)) {
+            if (!isNaN(id) && id > 0) {
                 return id;
             }
         }
@@ -39,65 +40,128 @@
         // 2. JWT
         // -----------------------------------------------------
 
-        if (token) {
+        if (!token) {
 
-            try {
+            console.error(
+                'Aucun token trouvé dans localStorage.'
+            );
 
-                const parts = token.split('.');
+            return null;
+        }
 
-                if (parts.length === 3) {
 
-                    const payload =
-                        JSON.parse(
-                            atob(
-                                parts[1]
-                                    .replace(/-/g, '+')
-                                    .replace(/_/g, '/')
-                            )
-                        );
+        try {
 
-                    const id =
-                        payload.id_agency ??
-                        payload.agency_id ??
-                        payload.id;
+            const parts = token.split('.');
 
-                    if (id !== undefined) {
-
-                        const agencyId =
-                            Number(id);
-
-                        if (!isNaN(agencyId)) {
-                            return agencyId;
-                        }
-                    }
-                }
-
-            } catch (error) {
+            if (parts.length !== 3) {
 
                 console.error(
-                    'Impossible de lire le token :',
-                    error
+                    'Token JWT invalide.'
                 );
 
+                return null;
             }
+
+
+            let base64Payload = parts[1]
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+
+
+            // Compléter le Base64 si nécessaire
+            while (base64Payload.length % 4 !== 0) {
+                base64Payload += '=';
+            }
+
+
+            const payload =
+                JSON.parse(
+                    atob(base64Payload)
+                );
+
+
+            console.log(
+                'Payload JWT :',
+                payload
+            );
+
+
+            // =================================================
+            // IMPORTANT
+            //
+            // Ton Auth.php crée :
+            //
+            // "data": {
+            //     "id": id_agency,
+            //     "login": login,
+            //     "country": country
+            // }
+            //
+            // Donc l'ID est :
+            //
+            // payload.data.id
+            // =================================================
+
+            const id =
+                payload?.data?.id;
+
+
+            if (
+                id !== undefined &&
+                id !== null
+            ) {
+
+                const agencyId =
+                    Number(id);
+
+
+                if (
+                    !isNaN(agencyId) &&
+                    agencyId > 0
+                ) {
+
+                    return agencyId;
+
+                }
+
+            }
+
+
+            console.error(
+                'ID agence absent du JWT.'
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Impossible de lire le token JWT :',
+                error
+            );
+
         }
+
 
         return null;
     }
 
+
+    // =========================================================
+    // AGENCE CONNECTÉE
+    // =========================================================
 
     currentAgencyId =
         getCurrentAgencyId();
 
 
     console.log(
-        'Agence connectée :',
+        'ID agence connectée :',
         currentAgencyId
     );
 
 
     // =========================================================
-    // CHARGER LES AGENCES
+    // CHARGER TOUTES LES AGENCES
     // =========================================================
 
     async function loadAgency() {
@@ -139,13 +203,17 @@
             );
 
 
+            // =====================================================
+            // VÉRIFIER RÉPONSE
+            // =====================================================
+
             if (
                 !agencyRes.success ||
                 !Array.isArray(agencyRes.data)
             ) {
 
                 console.error(
-                    'Réponse agence incorrecte :',
+                    'Réponse agences incorrecte :',
                     agencyRes
                 );
 
@@ -153,12 +221,16 @@
             }
 
 
+            // =====================================================
+            // STOCKER
+            // =====================================================
+
             agencies =
                 agencyRes.data;
 
 
             // =====================================================
-            // CONTENEUR DES ONGLETS
+            // CONTENEUR
             // =====================================================
 
             const tabsContainer =
@@ -177,25 +249,16 @@
             }
 
 
+            // Nettoyer
             tabsContainer.innerHTML = '';
 
 
             // =====================================================
-            // CRÉER LES ONGLETS
+            // AFFICHER TOUTES LES AGENCES
             // =====================================================
 
             agencies.forEach(
-                (agency) => {
-
-                    // Ne pas afficher l'agence connectée
-                    if (
-                        currentAgencyId &&
-                        Number(agency.id_agency) ===
-                        Number(currentAgencyId)
-                    ) {
-                        return;
-                    }
-
+                (agency, index) => {
 
                     const button =
                         document.createElement(
@@ -212,12 +275,24 @@
                     );
 
 
+                    // Première agence active
+                    if (index === 0) {
+
+                        button.classList.add(
+                            'active'
+                        );
+
+                    }
+
+
+                    // ID agence
                     button.dataset.tab =
                         agency.id_agency;
 
 
+                    // Nom agence
                     button.textContent =
-                        agency.login;
+                        agency.login ?? 'Agence';
 
 
                     tabsContainer.appendChild(
@@ -229,49 +304,46 @@
 
 
             // =====================================================
-            // SÉLECTIONNER LA PREMIÈRE AGENCE
+            // SÉLECTIONNER PREMIÈRE AGENCE
             // =====================================================
 
-            const firstAgency =
-                agencies.find(
-                    agency =>
-                        !currentAgencyId ||
-                        Number(agency.id_agency) !==
-                        Number(currentAgencyId)
-                );
-
-
-            if (firstAgency) {
-
-                const firstButton =
-                    tabsContainer.querySelector(
-                        `[data-tab="${firstAgency.id_agency}"]`
-                    );
-
-
-                if (firstButton) {
-
-                    firstButton.classList.add(
-                        'active'
-                    );
-
-                }
-
+            if (agencies.length > 0) {
 
                 selectAgency(
-                    firstAgency
+                    agencies[0]
                 );
+
+            } else {
+
+                const messagesContainer =
+                    document.getElementById(
+                        'messages'
+                    );
+
+
+                if (messagesContainer) {
+
+                    messagesContainer.innerHTML = `
+
+                        <div class="no-messages">
+                            Aucune agence disponible.
+                        </div>
+
+                    `;
+
+                }
 
             }
 
         } catch (error) {
 
             console.error(
-                'Erreur lors du chargement des agences :',
+                'Erreur chargement agences :',
                 error
             );
 
         }
+
     }
 
 
@@ -285,7 +357,7 @@
 
             const button =
                 event.target.closest(
-                    '.tab-button'
+                    '#agencyTabs .tab-button'
                 );
 
 
@@ -294,9 +366,9 @@
             }
 
 
-            // -------------------------------------------------
-            // Retirer active
-            // -------------------------------------------------
+            // =====================================================
+            // ACTIVE
+            // =====================================================
 
             document
                 .querySelectorAll(
@@ -313,28 +385,38 @@
                 );
 
 
-            // -------------------------------------------------
-            // Ajouter active
-            // -------------------------------------------------
-
             button.classList.add(
                 'active'
             );
 
 
-            // -------------------------------------------------
-            // ID agence destinataire
-            // -------------------------------------------------
+            // =====================================================
+            // ID DESTINATAIRE
+            // =====================================================
 
-            const idAgency =
+            const idReceive =
                 button.dataset.tab;
 
+
+            console.log(
+                'Agence destinataire ID :',
+                idReceive
+            );
+
+
+            // =====================================================
+            // TROUVER AGENCE
+            // =====================================================
 
             const agency =
                 agencies.find(
                     item =>
-                        String(item.id_agency) ===
-                        String(idAgency)
+                        String(
+                            item.id_agency
+                        ) ===
+                        String(
+                            idReceive
+                        )
                 );
 
 
@@ -342,12 +424,16 @@
 
                 console.error(
                     'Agence introuvable :',
-                    idAgency
+                    idReceive
                 );
 
                 return;
             }
 
+
+            // =====================================================
+            // SÉLECTIONNER
+            // =====================================================
 
             selectAgency(
                 agency
@@ -368,16 +454,18 @@
 
 
         console.log(
-            'Agence destinataire :',
+            'Agence sélectionnée :',
             selectedAgency
         );
 
 
+        // Afficher informations
         displayAgency(
             agency
         );
 
 
+        // Charger conversation
         loadMessages(
             agency.id_agency
         );
@@ -386,7 +474,7 @@
 
 
     // =========================================================
-    // AFFICHER LES INFORMATIONS DE L'AGENCE
+    // AFFICHER INFORMATIONS AGENCE
     // =========================================================
 
     function displayAgency(agency) {
@@ -462,7 +550,7 @@
 
 
     // =========================================================
-    // CHARGER LA CONVERSATION
+    // CHARGER CONVERSATION
     // =========================================================
 
     async function loadMessages(idReceive) {
@@ -483,6 +571,28 @@
         }
 
 
+        // =====================================================
+        // VÉRIFIER TOKEN
+        // =====================================================
+
+        if (!token) {
+
+            messagesContainer.innerHTML = `
+
+                <div class="no-messages">
+                    Session expirée. Veuillez vous reconnecter.
+                </div>
+
+            `;
+
+            return;
+        }
+
+
+        // =====================================================
+        // CHARGEMENT
+        // =====================================================
+
         messagesContainer.innerHTML = `
 
             <div class="loading-messages">
@@ -494,18 +604,20 @@
 
         try {
 
+            const url =
+                `/api-siis/routes/messaging.php?id_agency=${encodeURIComponent(idReceive)}`;
+
+
             const response =
                 await fetch(
-                    `/api-siis/routes/messaging.php?id_agency=${encodeURIComponent(idReceive)}`,
+                    url,
                     {
                         method: 'GET',
 
-                        headers: token
-                            ? {
-                                'Authorization':
-                                    'Bearer ' + token
-                            }
-                            : {}
+                        headers: {
+                            'Authorization':
+                                'Bearer ' + token
+                        }
                     }
                 );
 
@@ -529,10 +641,32 @@
             );
 
 
-            if (
-                !result.success ||
-                !Array.isArray(result.data)
-            ) {
+            // =====================================================
+            // API ERROR
+            // =====================================================
+
+            if (!result.success) {
+
+                messagesContainer.innerHTML = `
+
+                    <div class="no-messages">
+                        ${escapeHtml(
+                            result.message ??
+                            'Impossible de charger la conversation.'
+                        )}
+                    </div>
+
+                `;
+
+                return;
+            }
+
+
+            // =====================================================
+            // DATA
+            // =====================================================
+
+            if (!Array.isArray(result.data)) {
 
                 messagesContainer.innerHTML = `
 
@@ -545,6 +679,10 @@
                 return;
             }
 
+
+            // =====================================================
+            // AFFICHER
+            // =====================================================
 
             renderMessages(
                 result.data
@@ -592,6 +730,10 @@
         container.innerHTML = '';
 
 
+        // =====================================================
+        // AUCUN MESSAGE
+        // =====================================================
+
         if (messages.length === 0) {
 
             container.innerHTML = `
@@ -605,6 +747,10 @@
             return;
         }
 
+
+        // =====================================================
+        // AFFICHER
+        // =====================================================
 
         messages.forEach(
             message => {
@@ -623,6 +769,7 @@
         );
 
 
+        // Descendre en bas
         container.scrollTop =
             container.scrollHeight;
 
@@ -630,7 +777,7 @@
 
 
     // =========================================================
-    // CRÉER UN ÉLÉMENT MESSAGE
+    // CRÉER MESSAGE
     // =========================================================
 
     function createMessageElement(message) {
@@ -644,16 +791,22 @@
         // =====================================================
         // IMPORTANT
         //
-        // id_sender = agence qui a envoyé
-        // currentAgencyId = agence connectée
+        // L'agence connectée = currentAgencyId
         //
-        // Même si selectedAgency est l'agence destinataire,
-        // elle ne doit PAS servir ici.
+        // L'agence sélectionnée = destinataire
+        //
+        // Donc pour savoir si "Vous" avez envoyé :
+        //
+        // message.id_sender === currentAgencyId
         // =====================================================
 
         const isSent =
-            Number(message.id_sender) ===
-            Number(currentAgencyId);
+            Number(
+                message.id_sender
+            ) ===
+            Number(
+                currentAgencyId
+            );
 
 
         // =====================================================
@@ -680,8 +833,11 @@
 
                         <strong>
                             ${escapeHtml(
-                                message.sender_name ??
-                                'Agence'
+                                agencies.find(
+                                    agency =>
+                                        Number(agency.id_agency) ===
+                                        Number(message.id_receive)
+                                )?.login ?? 'Agence'
                             )}
                         </strong>
 
@@ -777,12 +933,11 @@
 
 
     // =========================================================
-    // AFFICHER LE FICHIER
+    // FICHIER
     // =========================================================
 
     function renderFile(message, type) {
 
-        // Ta BDD et ton modèle utilisent "file"
         if (!message.file) {
             return '';
         }
@@ -792,7 +947,10 @@
             message.file;
 
 
-        // Si PHP retourne un tableau
+        // =====================================================
+        // FILE = ARRAY / OBJECT
+        // =====================================================
+
         if (
             typeof message.file ===
             'object'
@@ -805,7 +963,8 @@
             ) {
 
                 fileName =
-                    message.file[0] ?? '';
+                    message.file[0] ??
+                    '';
 
             } else {
 
@@ -862,7 +1021,7 @@
 
 
     // =========================================================
-    // FORMATER L'HEURE
+    // HEURE
     // =========================================================
 
     function formatTime(date) {
@@ -881,8 +1040,14 @@
             );
 
 
-        if (isNaN(d.getTime())) {
+        if (
+            isNaN(
+                d.getTime()
+            )
+        ) {
+
             return '';
+
         }
 
 
@@ -898,7 +1063,7 @@
 
 
     // =========================================================
-    // FORMATER LE MESSAGE
+    // MESSAGE
     // =========================================================
 
     function formatMessage(text) {
@@ -919,7 +1084,7 @@
 
 
     // =========================================================
-    // SÉCURISER HTML
+    // SÉCURITÉ HTML
     // =========================================================
 
     function escapeHtml(value) {
@@ -955,7 +1120,7 @@
 
 
     // =========================================================
-    // ENVOYER UN MESSAGE
+    // ENVOYER MESSAGE
     // =========================================================
 
     const messageForm =
@@ -974,7 +1139,7 @@
 
 
                 // =================================================
-                // VÉRIFIER DESTINATAIRE
+                // AGENCE DESTINATAIRE
                 // =================================================
 
                 if (!selectedAgency) {
@@ -988,7 +1153,7 @@
 
 
                 // =================================================
-                // VÉRIFIER AGENCE CONNECTÉE
+                // AGENCE CONNECTÉE
                 // =================================================
 
                 if (!currentAgencyId) {
@@ -997,12 +1162,31 @@
                         'Impossible de déterminer l’agence connectée.'
                     );
 
+                    console.error(
+                        'currentAgencyId =',
+                        currentAgencyId
+                    );
+
                     return;
                 }
 
 
                 // =================================================
-                // INPUT MESSAGE
+                // TOKEN
+                // =================================================
+
+                if (!token) {
+
+                    alert(
+                        'Votre session a expiré.'
+                    );
+
+                    return;
+                }
+
+
+                // =================================================
+                // INPUT
                 // =================================================
 
                 const messageInput =
@@ -1031,7 +1215,7 @@
 
 
                 // =================================================
-                // ID DESTINATAIRE
+                // DESTINATAIRE
                 // =================================================
 
                 const id_receive =
@@ -1040,9 +1224,25 @@
                     );
 
 
+                if (
+                    !id_receive ||
+                    id_receive <= 0
+                ) {
+
+                    alert(
+                        'Agence destinataire invalide.'
+                    );
+
+                    return;
+                }
+
+
                 console.log(
-                    'Envoi :',
+                    'Envoi message :',
                     {
+                        id_sender:
+                            currentAgencyId,
+
                         id_receive:
                             id_receive,
 
@@ -1053,7 +1253,7 @@
 
 
                 // =================================================
-                // BOUTON ENVOYER
+                // BOUTON
                 // =================================================
 
                 const submitButton =
@@ -1073,14 +1273,11 @@
                 try {
 
                     // =================================================
-                    // DONNÉES ENVOYÉES AU CONTRÔLEUR
+                    // DONNÉES
                     //
-                    // Le contrôleur récupère lui-même :
+                    // NE PAS envoyer id_sender.
                     //
-                    // $id_sender =
-                    //     $this->agency->id_agency;
-                    //
-                    // Donc on ne met PAS id_sender ici.
+                    // Le Controller le récupère depuis JWT.
                     // =================================================
 
                     const data = {
@@ -1145,7 +1342,7 @@
 
 
                     // =================================================
-                    // ERREUR API
+                    // ERREUR
                     // =================================================
 
                     if (!result.success) {
@@ -1160,16 +1357,13 @@
 
 
                     // =================================================
-                    // VIDER LE TEXTAREA
+                    // SUCCÈS
                     // =================================================
 
                     messageInput.value = '';
 
 
-                    // =================================================
-                    // RECHARGER LA CONVERSATION
-                    // =================================================
-
+                    // Recharger la conversation
                     await loadMessages(
                         selectedAgency.id_agency
                     );
@@ -1214,17 +1408,17 @@
         );
 
 
+    const fileInput =
+        document.getElementById(
+            'fileInput'
+        );
+
+
     if (fileButton) {
 
         fileButton.addEventListener(
             'click',
             function () {
-
-                const fileInput =
-                    document.getElementById(
-                        'fileInput'
-                    );
-
 
                 if (fileInput) {
 
@@ -1239,9 +1433,40 @@
 
 
     // =========================================================
+    // FICHIER SÉLECTIONNÉ
+    // =========================================================
+
+    if (fileInput) {
+
+        fileInput.addEventListener(
+            'change',
+            function () {
+
+                const file =
+                    fileInput.files[0];
+
+
+                if (!file) {
+                    return;
+                }
+
+
+                console.log(
+                    'Fichier sélectionné :',
+                    file.name
+                );
+
+            }
+        );
+
+    }
+
+
+    // =========================================================
     // DÉMARRAGE
     // =========================================================
 
     loadAgency();
 
 })();
+

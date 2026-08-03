@@ -41,8 +41,7 @@ class MessagingController {
         // AGENCE CONNECTÉE
         // =====================================================
 
-        $id_sender =
-            (int) $this->agency->id_agency;
+        $id_sender = (int) $this->agency->id;
 
 
         // =====================================================
@@ -99,7 +98,7 @@ class MessagingController {
 
 
         $id_agency =
-            (int) $this->agency->id_agency;
+            (int) $this->agency->id;
 
 
         $e =
@@ -160,8 +159,7 @@ class MessagingController {
         // EXPÉDITEUR
         // =====================================================
 
-        $id_sender =
-            (int) $this->agency->id_agency;
+        $id_sender = (int) $this->agency->id;
 
 
         // =====================================================
@@ -327,7 +325,7 @@ class MessagingController {
 
 
         $id_agency =
-            (int) $this->agency->id_agency;
+            (int) $this->agency->id;
 
 
         $e =
@@ -393,7 +391,7 @@ class MessagingController {
 
 
         $id_agency =
-            (int) $this->agency->id_agency;
+            (int) $this->agency->id;
 
 
         $e =
