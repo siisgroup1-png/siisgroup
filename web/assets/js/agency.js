@@ -1,6 +1,7 @@
 (() => {
 
     let editingRow = null;
+    const token = localStorage.getItem('token');
 
     // ==========================================================
     // DATATABLE
@@ -28,7 +29,13 @@
             const response = await fetch(
                 '/api-siis/routes/agency.php',
                 {
-                    method: 'GET'
+                    method: 'GET',
+                    headers: token
+                            ? {
+                                'Authorization':
+                                    'Bearer ' + token
+                            }
+                            : {}
                 }
             );
 

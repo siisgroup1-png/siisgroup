@@ -27,8 +27,8 @@ class Agency extends BaseModel {
         return $prefix . '-' . $random;
     }
 
-    public function getAllAgency() {
-        $stmt = $this->getAll("agency");
+    public function getAllAgency($id_agency) {
+        $stmt = $this->getAll("agency","where id_agency != ?",[$id_agency]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

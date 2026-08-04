@@ -5,10 +5,12 @@ require_once __DIR__ . '/../core/Middleware.php';
 class AgencyController {
 
     private $model;
+    private $agency;
 
 
 
     public function __construct() {
+        $this->agency = Middleware::checkAuth();
         $this->model = new Agency();
         error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
     }
@@ -19,7 +21,8 @@ class AgencyController {
 
      public function index() {
         header('Content-Type: application/json; charset=utf-8');
-        $data = $this->model->getAllAgency();
+        $id_agency = (int) $this->agency->id;
+        $data = $this->model->getAllAgency($id_agency);
         echo json_encode(['success'=>true, 'data'=>$data]);
         
         exit;
