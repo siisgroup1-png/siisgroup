@@ -84,7 +84,7 @@ class Messaging extends BaseModel
                 // Agence destinataire
                 $data['id_receive'],
 
-                date('Y-m-d H:i:s')
+                gmdate('Y-m-d H:i:s')
             ]
         );
 

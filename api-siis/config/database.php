@@ -269,7 +269,7 @@ class Database {
                     ':phone' => '678833252',
                     ':email' => 'siisgroup1@gmail.com',
                     ':password' => password_hash('siis', PASSWORD_DEFAULT),
-                    ':created_at' => date('Y-m-d')
+                    ':created_at' => gmdate('Y-m-d')
                 ]);
             }
 

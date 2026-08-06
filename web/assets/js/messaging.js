@@ -714,66 +714,361 @@
     // AFFICHER LES MESSAGES
     // =========================================================
 
-    function renderMessages(messages) {
+    // =========================================================
+// AFFICHER LES MESSAGES GROUPÉS PAR DATE
+// =========================================================
 
-        const container =
-            document.getElementById(
-                'messages'
-            );
+// =========================================================
+// AFFICHER LES MESSAGES GROUPÉS PAR DATE
+// =========================================================
+
+function renderMessages(messages) {
+
+    const container =
+        document.getElementById('messages');
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = '';
 
 
-        if (!container) {
+    // =====================================================
+    // AUCUN MESSAGE
+    // =====================================================
+
+    if (!messages || messages.length === 0) {
+
+        container.innerHTML = `
+            <div class="no-messages">
+                Aucun message pour cette agence.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    // =====================================================
+    // GROUPER LES MESSAGES PAR DATE LOCALE
+    // =====================================================
+
+    const groups = {};
+
+    messages.forEach(message => {
+
+        if (!message.created_at) {
             return;
         }
 
 
-        container.innerHTML = '';
+        // -------------------------------------------------
+        // Récupérer la date locale du message
+        // selon le fuseau de l'agence connectée
+        // -------------------------------------------------
+
+        const dateKey =
+            getLocalDateKey(message.created_at);
 
 
-        // =====================================================
-        // AUCUN MESSAGE
-        // =====================================================
-
-        if (messages.length === 0) {
-
-            container.innerHTML = `
-
-                <div class="no-messages">
-                    Aucun message pour cette agence.
-                </div>
-
-            `;
-
-            return;
+        if (!groups[dateKey]) {
+            groups[dateKey] = [];
         }
 
 
-        // =====================================================
-        // AFFICHER
-        // =====================================================
+        groups[dateKey].push(message);
 
-        messages.forEach(
-            message => {
-
-                const element =
-                    createMessageElement(
-                        message
-                    );
+    });
 
 
-                container.appendChild(
-                    element
-                );
+    // =====================================================
+    // TRIER LES DATES
+    // =====================================================
 
-            }
+    const sortedDates =
+        Object.keys(groups).sort();
+
+
+    // =====================================================
+    // AFFICHER LES GROUPES
+    // =====================================================
+
+    sortedDates.forEach(dateKey => {
+
+        // -------------------------------------------------
+        // SÉPARATEUR DE DATE
+        // -------------------------------------------------
+
+        const dateSeparator =
+            document.createElement('div');
+
+        dateSeparator.classList.add(
+            'message-date-separator'
+        );
+
+        dateSeparator.innerHTML = `
+            <span>
+                ${formatMessageDate(dateKey)}
+            </span>
+        `;
+
+        container.appendChild(
+            dateSeparator
         );
 
 
-        // Descendre en bas
-        container.scrollTop =
-            container.scrollHeight;
+        // -------------------------------------------------
+        // MESSAGES DU JOUR
+        // -------------------------------------------------
+
+        groups[dateKey].forEach(message => {
+
+            const element =
+                createMessageElement(message);
+
+            container.appendChild(
+                element
+            );
+
+        });
+
+    });
+
+
+    // =====================================================
+    // DESCENDRE EN BAS
+    // =====================================================
+
+    container.scrollTop =
+        container.scrollHeight;
+
+}
+
+
+// =========================================================
+// OBTENIR LA DATE LOCALE DU MESSAGE
+// =========================================================
+
+function getLocalDateKey(date) {
+
+    if (!date) {
+        return '';
+    }
+
+
+    // -----------------------------------------------------
+    // La BDD contient une date UTC
+    //
+    // Exemple :
+    // 2026-08-05 22:30:00
+    // -----------------------------------------------------
+
+    const utcDate =
+        new Date(
+            String(date).replace(' ', 'T') + 'Z'
+        );
+
+
+    if (isNaN(utcDate.getTime())) {
+        return '';
+    }
+
+
+    // -----------------------------------------------------
+    // AGENCE CONNECTÉE
+    // -----------------------------------------------------
+
+    const currentAgency =
+        agencies.find(
+            agency =>
+                Number(agency.id_agency) ===
+                Number(currentAgencyId)
+        );
+
+
+    const timezone =
+        getAgencyTimezone(currentAgency);
+
+
+    // -----------------------------------------------------
+    // CONVERTIR UTC → HEURE LOCALE
+    // -----------------------------------------------------
+
+    const parts =
+        new Intl.DateTimeFormat(
+            'en-CA',
+            {
+                timeZone: timezone,
+
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }
+        ).formatToParts(utcDate);
+
+
+    let year = '';
+    let month = '';
+    let day = '';
+
+
+    parts.forEach(part => {
+
+        if (part.type === 'year') {
+            year = part.value;
+        }
+
+        if (part.type === 'month') {
+            month = part.value;
+        }
+
+        if (part.type === 'day') {
+            day = part.value;
+        }
+
+    });
+
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+// =========================================================
+// FORMATER LA DATE DU GROUPE
+// =========================================================
+
+function formatMessageDate(dateString) {
+
+    if (!dateString) {
+        return '';
+    }
+
+
+    // =====================================================
+    // DATE DU GROUPE
+    // =====================================================
+
+    const [year, month, day] =
+        dateString.split('-').map(Number);
+
+
+    if (
+        !year ||
+        !month ||
+        !day
+    ) {
+        return dateString;
+    }
+
+
+    // =====================================================
+    // DATE LOCALE SANS CONVERSION UTC
+    // =====================================================
+
+    const messageDate =
+        new Date(
+            year,
+            month - 1,
+            day
+        );
+
+
+    if (isNaN(messageDate.getTime())) {
+        return dateString;
+    }
+
+
+    // =====================================================
+    // AUJOURD'HUI
+    // =====================================================
+
+    const today =
+        new Date();
+
+    today.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+
+    // =====================================================
+    // HIER
+    // =====================================================
+
+    const yesterday =
+        new Date(today);
+
+    yesterday.setDate(
+        yesterday.getDate() - 1
+    );
+
+
+    // =====================================================
+    // DEMAIN
+    // =====================================================
+
+    const tomorrow =
+        new Date(today);
+
+    tomorrow.setDate(
+        tomorrow.getDate() + 1
+    );
+
+
+    // =====================================================
+    // COMPARAISONS
+    // =====================================================
+
+    if (
+        messageDate.getTime() ===
+        today.getTime()
+    ) {
+
+        return "Aujourd'hui";
 
     }
+
+
+    if (
+        messageDate.getTime() ===
+        yesterday.getTime()
+    ) {
+
+        return "Hier";
+
+    }
+
+
+    if (
+        messageDate.getTime() ===
+        tomorrow.getTime()
+    ) {
+
+        return "Demain";
+
+    }
+
+
+    // =====================================================
+    // AUTRES DATES
+    // =====================================================
+
+    return messageDate.toLocaleDateString(
+        'fr-FR',
+        {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        }
+    );
+
+}
+
 
 
     // =========================================================
@@ -830,16 +1125,6 @@
                 <div class="message-wrapper">
 
                     <div class="message-meta">
-
-                        <strong>
-                            ${escapeHtml(
-                                agencies.find(
-                                    agency =>
-                                        Number(agency.id_agency) ===
-                                        Number(message.id_receive)
-                                )?.login ?? 'Agence'
-                            )}
-                        </strong>
 
                         <span>
                             ${formatTime(
@@ -1024,43 +1309,92 @@
     // HEURE
     // =========================================================
 
-    function formatTime(date) {
+    function getAgencyTimezone(agency) {
 
-        if (!date) {
-            return '';
-        }
-
-
-        const d =
-            new Date(
-                String(date).replace(
-                    ' ',
-                    'T'
-                )
-            );
-
-
-        if (
-            isNaN(
-                d.getTime()
-            )
-        ) {
-
-            return '';
-
-        }
-
-
-        return d.toLocaleTimeString(
-            'fr-FR',
-            {
-                hour: '2-digit',
-                minute: '2-digit'
-            }
-        );
-
+    if (!agency) {
+        return 'UTC';
     }
 
+    const country =
+        String(agency.country ?? '')
+            .trim()
+            .toLowerCase();
+
+
+    // Cameroun
+    if (
+        country === 'cameroun' ||
+        country === 'cameroon'
+    ) {
+        return 'Africa/Douala';
+    }
+
+
+    // France
+    if (
+        country === 'france'
+    ) {
+        return 'Europe/Paris';
+    }
+
+
+    // Inde
+    if (
+        country === 'inde' ||
+        country === 'india'
+    ) {
+        return 'Asia/Kolkata';
+    }
+
+
+    // Chine
+    if (
+        country === 'chine' ||
+        country === 'china'
+    ) {
+        return 'Asia/Shanghai';
+    }
+
+
+    // Par défaut
+    return 'UTC';
+}
+
+    function formatTime(date) {
+
+    if (!date) {
+        return '';
+    }
+
+    // L'heure enregistrée en BDD est en UTC
+    const utcDate = new Date(
+        String(date).replace(' ', 'T') + 'Z'
+    );
+
+    if (isNaN(utcDate.getTime())) {
+        return '';
+    }
+
+    // Fuseau de l'agence CONNECTÉE
+    const currentAgency =
+        agencies.find(
+            agency =>
+                Number(agency.id_agency) ===
+                Number(currentAgencyId)
+        );
+
+    const timezone =
+        getAgencyTimezone(currentAgency);
+
+    return utcDate.toLocaleTimeString(
+        'fr-FR',
+        {
+            timeZone: timezone,
+            hour: '2-digit',
+            minute: '2-digit'
+        }
+    );
+}
 
     // =========================================================
     // MESSAGE

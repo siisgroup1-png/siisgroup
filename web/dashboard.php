@@ -9,6 +9,7 @@
         <link href="./assets/vendor/fontawesome-free-6.7.2-web/css/all.min.css" rel="stylesheet">
         <link href="./assets/vendor/icofont/icofont.min.css" rel="stylesheet">
         <link href="./assets/vendor/datatables/datatables.bootstrap4.min.css" rel="stylesheet">
+        <link href="./assets/vendor/richtext/jquery.richtext.min.css">
         <link href="./assets/css/style.css" rel="stylesheet">
 
     </head>
@@ -148,6 +149,7 @@
         <script src="./assets/vendor/admin-2/sb-admin-2.min.js"></script>
         <script src="./assets/vendor/datatables/jquery.datatables.min.js"></script>
         <script src="./assets/vendor/datatables/datatables.bootstrap4.min.js"></script>
+        <script src="./assets/vendor/richtext/jquery.richtext.js"></script>
         <script src="./assets/vendor/datatables/datatables-demo.js"></script>
         <script src="./assets/vendor/noBack/noBack.js"></script>
         <script>

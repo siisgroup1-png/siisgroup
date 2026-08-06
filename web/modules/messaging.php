@@ -41,41 +41,19 @@
 
     <!-- FORMULAIRE D'ENVOI -->
     <form
-        action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>"
-        method="post"
-        class="php-form"
-        id="message"
-    >
+        action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post" class="php-form" id="message">
 
         <div>
 
-            <button
-                type="button"
-                class="file-button"
-                id="fileButton"
-            >
+            <button type="button" class="file-button" id="fileButton">
                 📎
             </button>
 
-            <input
-                type="file"
-                id="fileInput"
-                style="display:none"
-            >
+            <input type="file" id="fileInput" style="display:none">
 
-            <textarea
-                id="messageInput"
-                class="message-input mb-3"
-                rows="10"
-                placeholder="write a message..."
-            ></textarea>
+            <textarea id="messageInput" class="message-input mb-3" rows="10" placeholder="write a message..."></textarea>
 
-            <button
-                class="loading"
-                type="submit"
-            >
-                SEND ➤
-            </button>
+            <button class="loading" type="submit">SEND ➤</button>
 
         </div>
 
