@@ -64,7 +64,6 @@ class Messaging extends BaseModel
         $this->insert(
             "messaging",
             [
-                "subject",
                 "id_sender",
                 "message",
                 "file",
@@ -72,7 +71,6 @@ class Messaging extends BaseModel
                 "created_at"
             ],
             [
-                $data['subject'] ?? null,
 
                 // Agence connectée
                 $id_agency,
@@ -102,11 +100,9 @@ class Messaging extends BaseModel
         return $this->set(
             "messaging",
             [
-                "subject",
                 "message"
             ],
             [
-                $data['subject'] ?? null,
                 $data['message'] ?? null
             ],
             "WHERE id_messaging = ?

@@ -1645,9 +1645,6 @@ if (richTextEditor.length) {
                     // =================================================
 
                     const data = {
-
-                        subject: '',
-
                         message:
                             message,
 

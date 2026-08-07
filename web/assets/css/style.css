@@ -880,6 +880,7 @@ button.loading.show-loader::after {
 
 .richText {
   margin-top: 40px;
+  width: 100% !important;
 }
 
 .richText .richText-editor{

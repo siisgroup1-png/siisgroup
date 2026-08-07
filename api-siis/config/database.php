@@ -160,7 +160,6 @@ class Database {
                 "messaging" => "
                     CREATE TABLE IF NOT EXISTS messaging (
                         id_messaging INT AUTO_INCREMENT PRIMARY KEY,
-                        subject VARCHAR(50) NOT NULL,
                         id_sender INT,
                         message TEXT,
                         file TEXT,
