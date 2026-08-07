@@ -10,7 +10,23 @@
     let agencies = [];
     let selectedAgency = null;
     let currentAgencyId = null;
+    function initRichText() {
 
+    const textarea = $('#messageInput');
+
+    if (!textarea.length) {
+        return;
+    }
+
+    if (textarea.next('.richText').length) {
+        return;
+    }
+
+    textarea.richText({
+        height: 200,
+        placeholder: 'Write a message...'
+    });
+}
 
     // =========================================================
     // RÉCUPÉRER L'ID DE L'AGENCE CONNECTÉE
@@ -1402,20 +1418,14 @@ function formatMessageDate(dateString) {
 
     function formatMessage(text) {
 
-        if (!text) {
-            return '';
-        }
-
-
-        return escapeHtml(
-            text
-        ).replace(
-            /\n/g,
-            '<br>'
-        );
-
+    if (!text) {
+        return '';
     }
 
+
+    return text;
+
+}
 
     // =========================================================
     // SÉCURITÉ HTML
@@ -1539,8 +1549,28 @@ function formatMessageDate(dateString) {
                 }
 
 
-                const message =
-                    messageInput.value.trim();
+                let message = '';
+
+const richTextEditor =
+    $('#messageInput')
+        .siblings('.richText')
+        .find('.richText-editor');
+
+if (richTextEditor.length) {
+
+    message =
+        richTextEditor
+            .html()
+            .trim();
+
+} else {
+
+    message =
+        $('#messageInput')
+            .val()
+            .trim();
+
+}
 
 
                 if (!message) {
@@ -1694,7 +1724,22 @@ function formatMessageDate(dateString) {
                     // SUCCÈS
                     // =================================================
 
-                    messageInput.value = '';
+                   $('.richText-editor').html('<div><br></div>'); 
+
+const richTextEditor =
+    $('#messageInput')
+        .siblings('.richText')
+        .find('.richText-editor');
+
+if (richTextEditor.length) {
+
+    richTextEditor
+        .html('');
+
+    richTextEditor
+        .trigger('change');
+
+}
 
 
                     // Recharger la conversation
@@ -1795,6 +1840,22 @@ function formatMessageDate(dateString) {
 
     }
 
+    window.destroyModule = function(){
+
+    if($('.richText').length){
+
+        $('.richText').remove();
+
+    }
+
+    if($('.richText-editor').length){
+
+        $('.richText-editor').remove();
+
+    }
+
+};
+initRichText();
 
     // =========================================================
     // DÉMARRAGE

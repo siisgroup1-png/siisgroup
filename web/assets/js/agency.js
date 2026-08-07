@@ -181,14 +181,16 @@
 
         try {
 
-            const response =
-                await fetch(
-                    '/api-siis/routes/agency.php',
-                    {
-                        method: 'POST',
-                        body: formData
-                    }
-                );
+            const response = await fetch(
+                '/api-siis/routes/agency.php',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: formData
+                }
+            );
 
 
             const result =
@@ -328,11 +330,15 @@
 
         try {
 
-            const response =
-                await fetch(
-                    `/api-siis/routes/agency.php?id=${agencyId}`
-                );
-
+            const response = await fetch(
+            `/api-siis/routes/agency.php?id=${agencyId}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            }
+        );
 
             const result =
                 await response.json();
@@ -433,7 +439,10 @@
                 await fetch(
                     `/api-siis/routes/agency.php?id=${id}`,
                     {
-                        method: 'DELETE'
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        }
                     }
                 );
 
