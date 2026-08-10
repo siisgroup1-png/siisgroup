@@ -10,6 +10,160 @@
     let agencies = [];
     let selectedAgency = null;
     let currentAgencyId = null;
+
+    // =========================================================
+// WEBSOCKET
+// =========================================================
+
+let socket = null;
+
+
+function connectWebSocket() {
+
+    socket =
+        new WebSocket(
+            'ws://localhost:8080'
+        );
+
+
+    socket.onopen = function () {
+
+        console.log(
+            '✅ WebSocket connecté'
+        );
+
+
+        /**
+         * Identifier l'agence connectée
+         */
+        socket.send(
+            JSON.stringify({
+
+                type:
+                    'authenticate',
+
+                id_agency:
+                    currentAgencyId
+
+            })
+        );
+
+    };
+
+
+    socket.onmessage = function (event) {
+
+        console.log(
+            '📩 WebSocket :',
+            event.data
+        );
+
+
+        let data;
+
+        try {
+
+            data =
+                JSON.parse(
+                    event.data
+                );
+
+        } catch (error) {
+
+            console.error(
+                'Réponse WebSocket invalide',
+                error
+            );
+
+            return;
+        }
+
+
+        /**
+         * Authentification réussie
+         */
+        if (
+            data.type ===
+            'authenticated'
+        ) {
+
+            console.log(
+                '🔐 WebSocket authentifié pour agence :',
+                data.id_agency
+            );
+
+            return;
+        }
+
+
+        /**
+         * Nouveau message reçu
+         */
+        if (
+            data.type ===
+            'new_message'
+        ) {
+
+            console.log(
+                '💬 Nouveau message reçu :',
+                data
+            );
+
+
+            /**
+             * Si la conversation affichée
+             * correspond au message reçu,
+             * on recharge la conversation.
+             */
+            if (
+                selectedAgency &&
+                Number(
+                    selectedAgency.id_agency
+                ) ===
+                Number(
+                    data.id_sender
+                )
+            ) {
+
+                loadMessages(
+                    selectedAgency.id_agency
+                );
+
+            }
+
+        }
+
+    };
+
+
+    socket.onerror = function (error) {
+
+        console.error(
+            '❌ Erreur WebSocket :',
+            error
+        );
+
+    };
+
+
+    socket.onclose = function () {
+
+        console.log(
+            '🔴 WebSocket déconnecté'
+        );
+
+
+        /**
+         * Reconnexion automatique
+         */
+        setTimeout(
+            connectWebSocket,
+            3000
+        );
+
+    };
+
+}
     function initRichText() {
 
     const textarea = $('#messageInput');
@@ -174,6 +328,12 @@
         'ID agence connectée :',
         currentAgencyId
     );
+
+    if (currentAgencyId) {
+
+        connectWebSocket();
+
+    }
 
 
     // =========================================================
@@ -1721,29 +1881,86 @@ if (richTextEditor.length) {
                     // SUCCÈS
                     // =================================================
 
-                   $('.richText-editor').html('<div><br></div>'); 
+                  // =================================================
+                    // SUCCÈS
+                    // =================================================
 
-const richTextEditor =
-    $('#messageInput')
-        .siblings('.richText')
-        .find('.richText-editor');
-
-if (richTextEditor.length) {
-
-    richTextEditor
-        .html('');
-
-    richTextEditor
-        .trigger('change');
-
-}
+                    console.log(
+                        '✅ Message enregistré en base'
+                    );
 
 
-                    // Recharger la conversation
+                    // =================================================
+                    // ENVOYER LA NOTIFICATION WEBSOCKET
+                    // =================================================
+
+                    if (
+                        socket &&
+                        socket.readyState ===
+                        WebSocket.OPEN
+                    ) {
+
+                        socket.send(
+                            JSON.stringify({
+
+                                type:
+                                    'new_message',
+
+                                id_receive:
+                                    id_receive,
+
+                                message:
+                                    message
+
+                            })
+                        );
+
+
+                        console.log(
+                            '📡 Notification WebSocket envoyée'
+                        );
+
+                    } else {
+
+                        console.warn(
+                            '⚠️ WebSocket non connecté'
+                        );
+
+                    }
+
+
+                    // =================================================
+                    // VIDER L'ÉDITEUR
+                    // =================================================
+
+                    $('.richText-editor')
+                        .html('<div><br></div>');
+
+
+                    const richTextEditor =
+                        $('#messageInput')
+                            .siblings('.richText')
+                            .find('.richText-editor');
+
+
+                    if (richTextEditor.length) {
+
+                        richTextEditor
+                            .html('');
+
+                        richTextEditor
+                            .trigger('change');
+
+                    }
+
+
+                    // =================================================
+                    // RECHARGER LA CONVERSATION DE L'EXPÉDITEUR
+                    // =================================================
+
                     await loadMessages(
                         selectedAgency.id_agency
                     );
-
 
                 } catch (error) {
 
