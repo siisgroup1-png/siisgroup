@@ -14,7 +14,7 @@ class Agency extends BaseModel {
        LECTURE
     ======================= */
 
-    function generatePassword(string $login, int $randomLength = 8): string
+    function generatePassword(string $login, int $randomLength = 4): string
     {
         // Nettoyer le nom
         $prefix = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $login));
