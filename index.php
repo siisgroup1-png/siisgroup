@@ -170,7 +170,7 @@
     <section id="about" class="about">
   <div class="container">
     <div class="row align-items-center">
-      <div class="col-lg-6 section-about mb-lg-0" data-aos="fade-up">
+      <div class="col-lg-6 section-about mb-lg-0 mt-4" data-aos="fade-up">
         <div class="about-image">
           <img src="./web/assets/img/dg.jpeg" class="img-fluid" alt="SIIS">
         </div>
